@@ -59,7 +59,13 @@ export type State = {
 
 const PASSPHRASE = "correct horse battery staple";
 
-let state: State = { ready: false, personas: [], sightings: [], passphrase: PASSPHRASE };
+let state: State = {
+  ready: false,
+  personas: [],
+  sightings: [],
+  passphrase: PASSPHRASE,
+  watermarks: [],
+};
 const serverState = state;
 const listeners = new Set<() => void>();
 
