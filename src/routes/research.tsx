@@ -6,6 +6,7 @@ import { Globe, Send, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { VoiceBrief } from "@/components/VoiceBrief";
 import { buildChatContext } from "@/lib/chat-context";
 import { useCanary } from "@/lib/store";
 
@@ -73,8 +74,12 @@ function ResearchPage() {
       <h1 className="text-[26px] font-semibold leading-tight">Ask the analyst</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         It reads your results, gives its own read on what happened, and searches the news on any
-        company or broker you name.
+        company or broker you name. Tap the voice brief to hear it read aloud.
       </p>
+
+      <div className="mt-4">
+        <VoiceBrief label="Voice brief" />
+      </div>
 
       <div className="mt-5 space-y-3">
         {messages.length === 0 && (
@@ -99,6 +104,11 @@ function ResearchPage() {
                     }
                   >
                     {part.text}
+                    {m.role === "assistant" && !busy && (
+                      <div className="mt-2">
+                        <VoiceBrief compact label="Listen" text={part.text} />
+                      </div>
+                    )}
                   </div>
                 );
               }
