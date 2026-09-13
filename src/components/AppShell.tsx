@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Search, Vault, Bell, FlaskConical } from "lucide-react";
+import { Search, Vault, Bell, FlaskConical, Sparkles } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { initCanary, useCanary } from "@/lib/store";
 
@@ -7,6 +7,7 @@ const TABS = [
   { to: "/", label: "Check", icon: Search },
   { to: "/vault", label: "Vault", icon: Vault },
   { to: "/alerts", label: "Alerts", icon: Bell },
+  { to: "/research", label: "Research", icon: Sparkles },
   { to: "/demo", label: "Demo", icon: FlaskConical },
 ] as const;
 
