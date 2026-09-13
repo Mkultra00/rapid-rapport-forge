@@ -11,9 +11,11 @@ type Props = {
   topic?: string;
   label?: string;
   compact?: boolean;
+  /** Round icon-only floating button. */
+  iconOnly?: boolean;
 };
 
-export function VoiceBrief({ text, topic, label = "Voice brief", compact = false }: Props) {
+export function VoiceBrief({ text, topic, label = "Voice brief", compact = false, iconOnly = false }: Props) {
   const state = useCanary();
   const [busy, setBusy] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -51,6 +53,28 @@ export function VoiceBrief({ text, topic, label = "Voice brief", compact = false
     } finally {
       setBusy(false);
     }
+  }
+
+  if (iconOnly) {
+    return (
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={() => void run()}
+        disabled={busy}
+        className="h-14 w-14 rounded-full shadow-lg"
+        aria-label={label}
+        title={error ?? label}
+      >
+        {busy ? (
+          <Loader2 className="h-6 w-6 animate-spin" />
+        ) : playing ? (
+          <Pause className="h-6 w-6" />
+        ) : (
+          <Volume2 className="h-6 w-6" />
+        )}
+      </Button>
+    );
   }
 
   return (
