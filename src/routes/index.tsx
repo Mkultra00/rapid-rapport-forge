@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import canaryMascot from "@/assets/canary-mascot.png";
 import { ResultCard } from "@/components/ResultCard";
 import { WrenPanel } from "@/components/WrenPanel";
+import { UsernameGenerator } from "@/components/UsernameGenerator";
 import { DsarSheet } from "@/components/DsarSheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
