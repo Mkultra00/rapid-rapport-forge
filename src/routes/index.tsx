@@ -14,7 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { identify, scoreHypotheses, type Match } from "@/lib/attribute";
 import { VENDORS } from "@/lib/seed";
 import { draftDeletionRequest } from "@/lib/dsar";
-import { epochMap, freezeAndRotate, getKey, personaFor, useCanary } from "@/lib/store";
+import { epochMap, freezeAndRotate, getKey, personaFor, useCanary, vendorSlug } from "@/lib/store";
+import type { Vendor } from "@/lib/seed";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -57,11 +58,26 @@ function CheckPage() {
     }
   }, []);
 
+  // Seeded vendors plus any vendors the user added via the watermark generator,
+  // surfaced as pseudo-vendors keyed by their normalised slug so identify() can
+  // match a leaked watermark username back to the vendor that issued it.
+  const watermarkVendors: Vendor[] = state.watermarks.map((w) => ({
+    domain: w.slug,
+    name: w.name,
+    category: "social",
+    tier: "low",
+    breachPrior: 0.2,
+    issuedAt: new Date(w.history[w.history.length - 1]?.createdAt ?? Date.now())
+      .toISOString()
+      .slice(0, 10),
+  }));
+  const mergedVendors: Vendor[] = [...VENDORS, ...watermarkVendors];
+
   async function run(value: string) {
     const K = getKey();
     if (!K) return;
     setBusy(true);
-    const m = await identify(K, value, VENDORS, epochMap());
+    const m = await identify(K, value, mergedVendors, epochMap());
     setMatch(m);
     setSearched(true);
     setBusy(false);
@@ -112,32 +128,49 @@ function CheckPage() {
           />
           {vendorOpen && (
             <ul className="hairline absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-xl bg-card shadow-lg">
-              {VENDORS.filter(
+              {mergedVendors.filter(
                 (v) =>
                   !vendorQ ||
                   v.name.toLowerCase().includes(vendorQ.toLowerCase()) ||
                   v.domain.includes(vendorQ.toLowerCase()),
-              ).map((v) => (
-                <li key={v.domain}>
-                  <button
-                    type="button"
-                    className="block w-full px-4 py-2.5 text-left text-sm hover:bg-muted"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => {
-                      setVendorOpen(false);
-                      setVendorQ(v.name);
-                      const p = personaFor(v.domain);
-                      if (p) {
-                        setQ(p.email);
-                        void run(p.email);
-                      }
-                    }}
-                  >
-                    <span className="font-medium">{v.name}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">{v.domain}</span>
-                  </button>
-                </li>
-              ))}
+              ).map((v) => {
+                const isWatermark = !VENDORS.some((s) => s.domain === v.domain);
+                const wRecord = isWatermark
+                  ? state.watermarks.find((w) => w.slug === v.domain)
+                  : undefined;
+                return (
+                  <li key={v.domain}>
+                    <button
+                      type="button"
+                      className="block w-full px-4 py-2.5 text-left text-sm hover:bg-muted"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setVendorOpen(false);
+                        setVendorQ(v.name);
+                        if (isWatermark && wRecord?.history[0]) {
+                          const u = wRecord.history[0].username;
+                          setQ(u);
+                          void run(u);
+                        } else {
+                          const p = personaFor(v.domain);
+                          if (p) {
+                            setQ(p.email);
+                            void run(p.email);
+                          }
+                        }
+                      }}
+                    >
+                      <span className="font-medium">{v.name}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">{v.domain}</span>
+                      {isWatermark && (
+                        <span className="ml-2 text-[10px] uppercase tracking-widest text-primary">
+                          yours
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
