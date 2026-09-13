@@ -14,7 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { identify, scoreHypotheses, type Match } from "@/lib/attribute";
 import { VENDORS } from "@/lib/seed";
 import { draftDeletionRequest } from "@/lib/dsar";
-import { epochMap, freezeAndRotate, getKey, personaFor, useCanary } from "@/lib/store";
+import { epochMap, freezeAndRotate, getKey, personaFor, useCanary, vendorSlug } from "@/lib/store";
+import type { Vendor } from "@/lib/seed";
 
 export const Route = createFileRoute("/")({
   head: () => ({
