@@ -58,11 +58,26 @@ function CheckPage() {
     }
   }, []);
 
+  // Seeded vendors plus any vendors the user added via the watermark generator,
+  // surfaced as pseudo-vendors keyed by their normalised slug so identify() can
+  // match a leaked watermark username back to the vendor that issued it.
+  const watermarkVendors: Vendor[] = state.watermarks.map((w) => ({
+    domain: w.slug,
+    name: w.name,
+    category: "social",
+    tier: "low",
+    breachPrior: 0.2,
+    issuedAt: new Date(w.history[w.history.length - 1]?.createdAt ?? Date.now())
+      .toISOString()
+      .slice(0, 10),
+  }));
+  const mergedVendors: Vendor[] = [...VENDORS, ...watermarkVendors];
+
   async function run(value: string) {
     const K = getKey();
     if (!K) return;
     setBusy(true);
-    const m = await identify(K, value, VENDORS, epochMap());
+    const m = await identify(K, value, mergedVendors, epochMap());
     setMatch(m);
     setSearched(true);
     setBusy(false);
