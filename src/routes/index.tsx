@@ -94,6 +94,55 @@ function CheckPage() {
         Paste the address, username or number that turned up somewhere it shouldn't have.
       </p>
 
+      {/* Demo vendor search — pick a seeded vendor to check its watermark */}
+      {state.ready && (
+        <div className="relative mt-4">
+          <Input
+            value={vendorQ}
+            onChange={(e) => {
+              setVendorQ(e.target.value);
+              setVendorOpen(true);
+            }}
+            onFocus={() => setVendorOpen(true)}
+            onBlur={() => setTimeout(() => setVendorOpen(false), 150)}
+            placeholder="Search a demo vendor (e.g. MegaShop)"
+            className="h-12"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {vendorOpen && (
+            <ul className="hairline absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-xl bg-card shadow-lg">
+              {VENDORS.filter(
+                (v) =>
+                  !vendorQ ||
+                  v.name.toLowerCase().includes(vendorQ.toLowerCase()) ||
+                  v.domain.includes(vendorQ.toLowerCase()),
+              ).map((v) => (
+                <li key={v.domain}>
+                  <button
+                    type="button"
+                    className="block w-full px-4 py-2.5 text-left text-sm hover:bg-muted"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setVendorOpen(false);
+                      setVendorQ(v.name);
+                      const p = personaFor(v.domain);
+                      if (p) {
+                        setQ(p.email);
+                        void run(p.email);
+                      }
+                    }}
+                  >
+                    <span className="font-medium">{v.name}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{v.domain}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       <form
         className="mt-4 flex gap-2"
         onSubmit={(e) => {
