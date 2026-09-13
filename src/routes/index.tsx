@@ -45,6 +45,8 @@ function CheckPage() {
   const [busy, setBusy] = useState(false);
   const [wren, setWren] = useState(false);
   const [dsar, setDsar] = useState<string | null>(null);
+  const [vendorQ, setVendorQ] = useState("");
+  const [vendorOpen, setVendorOpen] = useState(false);
 
   // Prefill from the newest unacknowledged sighting when arriving from Alerts.
   useEffect(() => {
