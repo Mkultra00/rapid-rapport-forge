@@ -35,11 +35,26 @@ export type Sighting = {
   hashPrev: string | null;
 };
 
+export type Watermark = {
+  username: string;
+  epoch: number;
+  createdAt: number;
+};
+
+export type VendorWatermarks = {
+  /** Display name as typed by the user. */
+  name: string;
+  /** Normalised key used for derivation. */
+  slug: string;
+  history: Watermark[];
+};
+
 export type State = {
   ready: boolean;
   personas: Persona[];
   sightings: Sighting[];
   passphrase: string;
+  watermarks: VendorWatermarks[];
 };
 
 const PASSPHRASE = "correct horse battery staple";
