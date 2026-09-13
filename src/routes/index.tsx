@@ -169,6 +169,9 @@ function CheckPage() {
         </div>
       )}
 
+      {/* Spacer so page content scrolls clear of the floating action buttons */}
+      <div className="h-48" aria-hidden />
+
       <div className="fixed bottom-24 right-[max(1.25rem,calc(50%-215px+1.25rem))] z-30 flex flex-col gap-3">
         <VoiceBrief iconOnly label="Voice brief" />
         <Button
