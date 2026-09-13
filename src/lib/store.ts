@@ -184,6 +184,39 @@ export function hypothesesFor(s: Sighting): Hypothesis[] {
   return scoreHypotheses(persona?.vendor ?? VENDORS[0]!, s.evidence);
 }
 
+/** Normalise a typed vendor name into a stable derivation key. */
+export function vendorSlug(name: string) {
+  return name.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+export function watermarksFor(name: string): VendorWatermarks | undefined {
+  const slug = vendorSlug(name);
+  return state.watermarks.find((w) => w.slug === slug);
+}
+
+/**
+ * Generate the next watermark username for a vendor name. Existing vendors get a
+ * new epoch appended to their history; new vendors start a fresh history.
+ */
+export async function generateWatermark(name: string): Promise<Watermark | null> {
+  const K = key;
+  const slug = vendorSlug(name);
+  if (!K || !slug) return null;
+  const existing = state.watermarks.find((w) => w.slug === slug);
+  const epoch = existing ? (existing.history[0]?.epoch ?? -1) + 1 : 0;
+  const username = await deriveUsername(K, slug, epoch);
+  const entry: Watermark = { username, epoch, createdAt: Date.now() };
+  const next: VendorWatermarks = existing
+    ? { ...existing, name: name.trim(), history: [entry, ...existing.history] }
+    : { name: name.trim(), slug, history: [entry] };
+  set({
+    watermarks: existing
+      ? state.watermarks.map((w) => (w.slug === slug ? next : w))
+      : [next, ...state.watermarks],
+  });
+  return entry;
+}
+
 export function personaFor(domain: string): Persona | undefined {
   return state.personas.find((p) => p.vendor.domain === domain);
 }
