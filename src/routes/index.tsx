@@ -131,6 +131,12 @@ function CheckPage() {
         </div>
       )}
 
+      {state.ready && (
+        <div className="mt-6">
+          <UsernameGenerator />
+        </div>
+      )}
+
       {busy && <Skeleton className="mt-6 h-40 w-full rounded-2xl" />}
 
       {!busy && searched && !match && (
