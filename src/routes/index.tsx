@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { MessageCircle, Search, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import canaryMascot from "@/assets/canary-mascot.png";
 import { ResultCard } from "@/components/ResultCard";
 import { WrenPanel } from "@/components/WrenPanel";
 import { DsarSheet } from "@/components/DsarSheet";
@@ -70,13 +71,23 @@ function CheckPage() {
 
   return (
     <AppShell title="Check">
-      <h1 className="text-[26px] font-semibold leading-tight">
-        Where did this
-        <br />
-        come from?
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Paste the address, username or number that turned up somewhere it shouldn&apos;t have.
+      <div className="flex flex-col items-center text-center">
+        <img
+          src={canaryMascot}
+          alt="Canary mascot — a canary in a police uniform holding a magnifying glass"
+          width={1024}
+          height={1024}
+          className="h-32 w-32 object-contain drop-shadow-[0_0_24px_color-mix(in_oklab,var(--color-primary)_40%,transparent)]"
+        />
+        <h1 className="mono-tag mt-2 text-5xl font-bold tracking-[0.15em] text-primary">
+          CANARY
+        </h1>
+        <p className="mt-1 text-sm font-medium italic text-muted-foreground">
+          In God we trust, everyone else we watermark.
+        </p>
+      </div>
+      <p className="mt-4 text-center text-sm text-muted-foreground">
+        Paste the address, username or number that turned up somewhere it shouldn't have.
       </p>
 
       <form
