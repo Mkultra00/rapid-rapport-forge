@@ -1,4 +1,7 @@
-export type SearchHit = { title: string; url: string; snippet: string };
+export type SearchHit = { title: string; url: string; snippet: string; source: "web" | "news" };
+
+const UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125 Safari/537.36";
 
 function decode(html: string) {
   return html
@@ -15,8 +18,7 @@ function decode(html: string) {
 
 function unwrap(href: string) {
   try {
-    if (href.startsWith("//")) href = `https:${href}`;
-    const u = new URL(href, "https://duckduckgo.com");
+    const u = new URL(href.startsWith("//") ? `https:${href}` : href, "https://duckduckgo.com");
     const target = u.searchParams.get("uddg");
     return target ? decodeURIComponent(target) : u.toString();
   } catch {
@@ -24,32 +26,56 @@ function unwrap(href: string) {
   }
 }
 
-/** Scrapes the DuckDuckGo HTML endpoint — no API key required. */
-export async function webSearch(query: string, limit = 5): Promise<SearchHit[]> {
-  const res = await fetch("https://html.duckduckgo.com/html/", {
-    method: "POST",
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-      "user-agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125 Safari/537.36",
-    },
-    body: new URLSearchParams({ q: query }).toString(),
+async function duckduckgo(query: string, limit: number): Promise<SearchHit[]> {
+  const res = await fetch(`https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`, {
+    headers: { "user-agent": UA },
   });
   if (!res.ok) return [];
   const html = await res.text();
-
   const hits: SearchHit[] = [];
-  const blocks = html.split('class="result__body"').slice(1);
-  for (const block of blocks) {
-    const link = /<a[^>]+class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/.exec(block);
-    if (!link) continue;
-    const snip = /class="result__snippet"[^>]*>([\s\S]*?)<\/a>/.exec(block);
+  const linkRe = /<a[^>]+class="result-link"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
+  const snippets = [...html.matchAll(/class="result-snippet"[^>]*>([\s\S]*?)<\/td>/g)].map((m) =>
+    decode(m[1] ?? ""),
+  );
+  let i = 0;
+  for (const m of html.matchAll(linkRe)) {
     hits.push({
-      title: decode(link[2] ?? ""),
-      url: unwrap(link[1] ?? ""),
-      snippet: decode(snip?.[1] ?? ""),
+      title: decode(m[2] ?? ""),
+      url: unwrap(m[1] ?? ""),
+      snippet: snippets[i] ?? "",
+      source: "web",
     });
+    i++;
     if (hits.length >= limit) break;
   }
   return hits;
+}
+
+async function googleNews(query: string, limit: number): Promise<SearchHit[]> {
+  const res = await fetch(
+    `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`,
+    { headers: { "user-agent": UA } },
+  );
+  if (!res.ok) return [];
+  const xml = await res.text();
+  const hits: SearchHit[] = [];
+  for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
+    const item = m[1] ?? "";
+    const title = decode(/<title>([\s\S]*?)<\/title>/.exec(item)?.[1] ?? "");
+    const url = decode(/<link>([\s\S]*?)<\/link>/.exec(item)?.[1] ?? "");
+    const date = decode(/<pubDate>([\s\S]*?)<\/pubDate>/.exec(item)?.[1] ?? "");
+    if (!title) continue;
+    hits.push({ title, url, snippet: date, source: "news" });
+    if (hits.length >= limit) break;
+  }
+  return hits;
+}
+
+/** Free, key-less web + news search used by the research assistant. */
+export async function webSearch(query: string, limit = 5): Promise<SearchHit[]> {
+  const [web, news] = await Promise.all([
+    duckduckgo(query, limit).catch(() => [] as SearchHit[]),
+    googleNews(query, Math.min(limit, 4)).catch(() => [] as SearchHit[]),
+  ]);
+  return [...web, ...news];
 }
