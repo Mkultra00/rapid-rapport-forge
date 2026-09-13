@@ -128,32 +128,49 @@ function CheckPage() {
           />
           {vendorOpen && (
             <ul className="hairline absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-xl bg-card shadow-lg">
-              {VENDORS.filter(
+              {mergedVendors.filter(
                 (v) =>
                   !vendorQ ||
                   v.name.toLowerCase().includes(vendorQ.toLowerCase()) ||
                   v.domain.includes(vendorQ.toLowerCase()),
-              ).map((v) => (
-                <li key={v.domain}>
-                  <button
-                    type="button"
-                    className="block w-full px-4 py-2.5 text-left text-sm hover:bg-muted"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => {
-                      setVendorOpen(false);
-                      setVendorQ(v.name);
-                      const p = personaFor(v.domain);
-                      if (p) {
-                        setQ(p.email);
-                        void run(p.email);
-                      }
-                    }}
-                  >
-                    <span className="font-medium">{v.name}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">{v.domain}</span>
-                  </button>
-                </li>
-              ))}
+              ).map((v) => {
+                const isWatermark = !VENDORS.some((s) => s.domain === v.domain);
+                const wRecord = isWatermark
+                  ? state.watermarks.find((w) => w.slug === v.domain)
+                  : undefined;
+                return (
+                  <li key={v.domain}>
+                    <button
+                      type="button"
+                      className="block w-full px-4 py-2.5 text-left text-sm hover:bg-muted"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setVendorOpen(false);
+                        setVendorQ(v.name);
+                        if (isWatermark && wRecord?.history[0]) {
+                          const u = wRecord.history[0].username;
+                          setQ(u);
+                          void run(u);
+                        } else {
+                          const p = personaFor(v.domain);
+                          if (p) {
+                            setQ(p.email);
+                            void run(p.email);
+                          }
+                        }
+                      }}
+                    >
+                      <span className="font-medium">{v.name}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">{v.domain}</span>
+                      {isWatermark && (
+                        <span className="ml-2 text-[10px] uppercase tracking-widest text-primary">
+                          yours
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
