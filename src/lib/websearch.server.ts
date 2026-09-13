@@ -33,8 +33,8 @@ async function duckduckgo(query: string, limit: number): Promise<SearchHit[]> {
   if (!res.ok) return [];
   const html = await res.text();
   const hits: SearchHit[] = [];
-  const linkRe = /<a[^>]+class="result-link"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
-  const snippets = [...html.matchAll(/class="result-snippet"[^>]*>([\s\S]*?)<\/td>/g)].map((m) =>
+  const linkRe = /<a[^>]+href="([^"]+)"[^>]*class=['"]result-link['"][^>]*>([\s\S]*?)<\/a>/g;
+  const snippets = [...html.matchAll(/class=['"]result-snippet['"][^>]*>([\s\S]*?)<\/td>/g)].map((m) =>
     decode(m[1] ?? ""),
   );
   let i = 0;
