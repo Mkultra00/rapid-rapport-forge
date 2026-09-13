@@ -71,11 +71,43 @@ async function googleNews(query: string, limit: number): Promise<SearchHit[]> {
   return hits;
 }
 
-/** Free, key-less web + news search used by the research assistant. */
+type TavilyResult = { title?: string; url?: string; content?: string };
+
+/** Tavily search API — primary source when TAVILY_API_KEY is configured. */
+async function tavily(query: string, limit: number): Promise<SearchHit[]> {
+  const key = process.env["TAVILY_API_KEY"];
+  if (!key) return [];
+  const res = await fetch("https://api.tavily.com/search", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      query,
+      max_results: limit,
+      search_depth: "basic",
+      include_answer: false,
+      topic: "general",
+    }),
+  });
+  if (!res.ok) {
+    console.error(`Tavily search failed [${res.status}]: ${await res.text().catch(() => "")}`);
+    return [];
+  }
+  const data = (await res.json()) as { results?: TavilyResult[] };
+  return (data.results ?? []).slice(0, limit).map((r) => ({
+    title: r.title ?? r.url ?? "",
+    url: r.url ?? "",
+    snippet: (r.content ?? "").slice(0, 400),
+    source: "web" as const,
+  }));
+}
+
+/** Web + news search used by the research assistant. Tavily first, free sources as fallback. */
 export async function webSearch(query: string, limit = 5): Promise<SearchHit[]> {
-  const [web, news] = await Promise.all([
-    duckduckgo(query, limit).catch(() => [] as SearchHit[]),
+  const [tav, news] = await Promise.all([
+    tavily(query, limit).catch(() => [] as SearchHit[]),
     googleNews(query, Math.min(limit, 4)).catch(() => [] as SearchHit[]),
   ]);
+  if (tav.length) return [...tav, ...news];
+  const web = await duckduckgo(query, limit).catch(() => [] as SearchHit[]);
   return [...web, ...news];
 }

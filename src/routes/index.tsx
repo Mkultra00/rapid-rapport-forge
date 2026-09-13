@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { MessageCircle, Search, Sparkles } from "lucide-react";
+import { VoiceBrief } from "@/components/VoiceBrief";
 import { AppShell } from "@/components/AppShell";
 import canaryMascot from "@/assets/canary-mascot.png";
 import { ResultCard } from "@/components/ResultCard";
@@ -169,6 +170,7 @@ function CheckPage() {
       )}
 
       <div className="fixed bottom-24 right-[max(1.25rem,calc(50%-215px+1.25rem))] z-30 flex flex-col gap-3">
+        <VoiceBrief iconOnly label="Voice brief" />
         <Button
           asChild
           variant="secondary"

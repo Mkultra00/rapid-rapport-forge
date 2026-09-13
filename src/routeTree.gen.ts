@@ -15,6 +15,7 @@ import { Route as DemoRouteImport } from './routes/demo'
 import { Route as ResearchRouteImport } from './routes/research'
 import { Route as VaultRouteImport } from './routes/vault'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiVoiceBriefRouteImport } from './routes/api/voice-brief'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVoiceBriefRoute = ApiVoiceBriefRouteImport.update({
+  id: '/api/voice-brief',
+  path: '/api/voice-brief',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/research': typeof ResearchRoute
   '/vault': typeof VaultRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/voice-brief': typeof ApiVoiceBriefRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/research': typeof ResearchRoute
   '/vault': typeof VaultRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/voice-brief': typeof ApiVoiceBriefRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,12 +79,27 @@ export interface FileRoutesById {
   '/research': typeof ResearchRoute
   '/vault': typeof VaultRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/voice-brief': typeof ApiVoiceBriefRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/alerts' | '/demo' | '/research' | '/vault' | '/api/chat'
+  fullPaths:
+    | '/'
+    | '/alerts'
+    | '/demo'
+    | '/research'
+    | '/vault'
+    | '/api/chat'
+    | '/api/voice-brief'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/alerts' | '/demo' | '/research' | '/vault' | '/api/chat'
+  to:
+    | '/'
+    | '/alerts'
+    | '/demo'
+    | '/research'
+    | '/vault'
+    | '/api/chat'
+    | '/api/voice-brief'
   id:
     | '__root__'
     | '/'
@@ -85,6 +108,7 @@ export interface FileRouteTypes {
     | '/research'
     | '/vault'
     | '/api/chat'
+    | '/api/voice-brief'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,6 +118,7 @@ export interface RootRouteChildren {
   ResearchRoute: typeof ResearchRoute
   VaultRoute: typeof VaultRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiVoiceBriefRoute: typeof ApiVoiceBriefRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -140,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/voice-brief': {
+      id: '/api/voice-brief'
+      path: '/api/voice-brief'
+      fullPath: '/api/voice-brief'
+      preLoaderRoute: typeof ApiVoiceBriefRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -150,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResearchRoute: ResearchRoute,
   VaultRoute: VaultRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiVoiceBriefRoute: ApiVoiceBriefRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
