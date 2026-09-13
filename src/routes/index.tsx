@@ -150,13 +150,21 @@ function CheckPage() {
         </div>
       )}
 
-      <Button
-        onClick={() => setWren(true)}
-        className="fixed bottom-24 right-[max(1.25rem,calc(50%-215px+1.25rem))] z-30 h-14 w-14 rounded-full shadow-lg"
-        aria-label="Ask WREN"
-      >
-        <MessageCircle className="h-6 w-6" />
-      </Button>
+      <div className="fixed bottom-24 right-[max(1.25rem,calc(50%-215px+1.25rem))] z-30 flex flex-col gap-3">
+        <Button
+          asChild
+          variant="secondary"
+          className="h-14 w-14 rounded-full shadow-lg"
+          aria-label="Research with AI"
+        >
+          <Link to="/research">
+            <Sparkles className="h-6 w-6" />
+          </Link>
+        </Button>
+        <Button onClick={() => setWren(true)} className="h-14 w-14 rounded-full shadow-lg" aria-label="Ask WREN">
+          <MessageCircle className="h-6 w-6" />
+        </Button>
+      </div>
 
       <WrenPanel open={wren} onOpenChange={setWren} />
       <DsarSheet text={dsar} onOpenChange={() => setDsar(null)} />
