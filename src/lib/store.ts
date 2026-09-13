@@ -160,7 +160,7 @@ export function resetDemo() {
 
 export function hypothesesFor(s: Sighting): Hypothesis[] {
   const persona = state.personas.find((p) => p.vendor.domain === s.vendorDomain);
-  return scoreHypotheses(persona?.vendor ?? VENDORS[0], s.evidence);
+  return scoreHypotheses(persona?.vendor ?? VENDORS[0]!, s.evidence);
 }
 
 export function personaFor(domain: string): Persona | undefined {

@@ -95,7 +95,7 @@ function AlertRow({
 }) {
   const persona = personaFor(s.vendorDomain);
   const hs = hypothesesFor(s);
-  const top = hs[0];
+  const top = hs[0]!;
 
   if (open && persona) {
     return (

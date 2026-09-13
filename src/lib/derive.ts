@@ -23,7 +23,7 @@ function b32(bytes: Uint8Array, chars: number): string {
     acc = (acc << 8) | b;
     bits += 8;
     while (bits >= 5 && out.length < chars) {
-      out += B32[(acc >> (bits - 5)) & 31];
+      out += B32[(acc >> (bits - 5)) & 31]!;
       bits -= 5;
     }
     if (out.length >= chars) break;
@@ -69,12 +69,12 @@ export async function deriveCohort(
   category: string,
 ): Promise<Cohort> {
   const tag = await hmac(K, `cohort\0${quarter}\0${category}`);
-  const n = tag[0] & 0x3f;
+  const n = tag[0]! & 0x3f;
   const initials = "ABCDEFGHJKLMNPQRSTVWXYZ";
   const addrForms = ["Apt 4", "Apt. 4", "#4", "Unit 4"];
   return {
-    middleInitial: initials[n % initials.length],
-    addrForm: addrForms[(n >> 4) & 3],
+    middleInitial: initials[n % initials.length]!,
+    addrForm: addrForms[(n >> 4) & 3]!,
     cohortId: n,
   };
 }
@@ -82,7 +82,7 @@ export async function deriveCohort(
 /** Pooled phone DID by sensitivity tier — simulated for the demo. */
 export async function derivePooledDid(K: Uint8Array, tier: string): Promise<string> {
   const tag = await hmac(K, `did\0${tier}`);
-  const n = ((tag[0] << 16) | (tag[1] << 8) | tag[2]) % 10000000;
+  const n = ((tag[0]! << 16) | (tag[1]! << 8) | tag[2]!) % 10000000;
   const s = String(n).padStart(7, "0");
   return `+1 (628) ${s.slice(0, 3)}-${s.slice(3)}`;
 }

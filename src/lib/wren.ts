@@ -17,7 +17,7 @@ function findVendor(input: string) {
     (v) =>
       q.includes(v.name.toLowerCase()) ||
       q.includes(v.name.toLowerCase().replace(/\s/g, "")) ||
-      q.includes(v.domain.split(".")[0]),
+      q.includes(v.domain.split(".")[0]!),
   );
 }
 
@@ -79,8 +79,8 @@ export async function wrenReply(input: string, state: State): Promise<WrenReply>
   if (/why|explain|how do you know|sure|confiden/.test(q)) {
     if (!latest) return { text: "Nothing has turned up yet, so there's nothing to explain." };
     const hs = hypothesesFor(latest);
-    const top = hs[0];
-    const alt = hs[1];
+    const top = hs[0]!;
+    const alt = hs[1]!;
     return {
       tool: "explain_last_result",
       text: `${top.label}, at ${formatLR(top.likelihoodRatio)}. ${top.because[1] ?? top.because[0]} The next best explanation is that ${alt.label.toLowerCase()}, but ${alt.because[alt.because.length - 1]}`,
@@ -91,8 +91,8 @@ export async function wrenReply(input: string, state: State): Promise<WrenReply>
     const open = state.sightings.filter((s) => !s.acknowledged);
     if (!open.length)
       return { tool: "list_exposure", text: "Nothing new. All of your markers are quiet." };
-    const s = open[0];
-    const top = hypothesesFor(s)[0];
+    const s = open[0]!;
+    const top = hypothesesFor(s)[0]!;
     return {
       tool: "list_exposure",
       nav: "/alerts",

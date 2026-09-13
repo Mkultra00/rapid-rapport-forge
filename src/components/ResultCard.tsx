@@ -21,12 +21,12 @@ export function ResultCard({
   channel: string;
   epoch: number;
   hypotheses: Hypothesis[];
-  sighting?: Sighting;
+  sighting?: Sighting | undefined;
   onFreeze: () => void;
   onDsar: () => void;
-  frozen?: boolean;
+  frozen?: boolean | undefined;
 }) {
-  const top = hypotheses[0];
+  const top = hypotheses[0]!;
 
   return (
     <section className="hairline overflow-hidden rounded-2xl bg-card">

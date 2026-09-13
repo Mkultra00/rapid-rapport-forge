@@ -8,7 +8,7 @@ import { useCanary } from "@/lib/store";
 import { wrenReply } from "@/lib/wren";
 import { DsarSheet } from "./DsarSheet";
 
-type Msg = { role: "wren" | "you"; text: string; tool?: string };
+type Msg = { role: "wren" | "you"; text: string; tool?: string | undefined };
 
 const SUGGESTIONS = [
   "Someone's calling from NorthBank asking for my details",
