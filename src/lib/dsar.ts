@@ -1,7 +1,7 @@
 import type { Persona } from "./store";
 import type { Sighting } from "./store";
 
-export function draftDeletionRequest(persona: Persona, sighting?: Sighting): string {
+export function draftDeletionRequest(persona: Persona, sighting?: Sighting | undefined): string {
   const today = new Date().toISOString().slice(0, 10);
   return `To: privacy@${persona.vendor.domain}
 Subject: Data subject request — erasure and disclosure of recipients
