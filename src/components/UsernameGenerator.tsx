@@ -1,27 +1,26 @@
 import { useState } from "react";
 import { Check, Copy, Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { deriveUsername } from "@/lib/derive";
-import { VENDORS } from "@/lib/seed";
-import { getKey } from "@/lib/store";
+import { generateWatermark, useCanary, vendorSlug } from "@/lib/store";
 
 export function UsernameGenerator() {
-  const [vendor, setVendor] = useState(VENDORS[0]!.domain);
-  const [epoch, setEpoch] = useState(0);
-  const [username, setUsername] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const state = useCanary();
+  const [name, setName] = useState("");
+  const [copied, setCopied] = useState<string | null>(null);
 
-  async function generate(nextEpoch = epoch) {
-    const K = getKey();
-    if (!K) return;
-    setUsername(await deriveUsername(K, vendor, nextEpoch));
-    setCopied(false);
+  const slug = vendorSlug(name);
+  const record = state.watermarks.find((w) => w.slug === slug);
+  const current = record?.history[0];
+
+  async function generate() {
+    if (!slug) return;
+    setCopied(null);
+    await generateWatermark(name);
   }
 
-  async function copy() {
-    if (!username) return;
-    await navigator.clipboard.writeText(username);
-    setCopied(true);
+  async function copy(value: string) {
+    await navigator.clipboard.writeText(value);
+    setCopied(value);
   }
 
   return (
@@ -30,47 +29,62 @@ export function UsernameGenerator() {
         Watermark username generator
       </p>
       <div className="mt-3 flex gap-2">
-        <select
-          value={vendor}
-          onChange={(e) => {
-            setVendor(e.target.value);
-            setEpoch(0);
-            setUsername(null);
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void generate();
           }}
-          className="hairline mono-tag h-11 flex-1 rounded-xl bg-background px-3 text-sm"
-          aria-label="Vendor"
-        >
-          {VENDORS.map((v) => (
-            <option key={v.domain} value={v.domain}>
-              {v.name}
-            </option>
-          ))}
-        </select>
-        <Button onClick={() => void generate()} className="h-11">
+          placeholder="Name the vendor, e.g. Acme Gym"
+          className="hairline mono-tag h-11 min-w-0 flex-1 rounded-xl bg-background px-3 text-sm"
+          aria-label="Vendor name"
+        />
+        <Button onClick={() => void generate()} disabled={!slug} className="h-11 shrink-0">
           <Dices className="mr-2 h-4 w-4" /> Generate
         </Button>
       </div>
-      {username && (
+
+      {current && (
         <div className="mt-3 flex items-center gap-2">
           <code className="mono-tag flex-1 truncate rounded-xl bg-background px-3 py-2.5 text-base text-primary">
-            {username}
+            {current.username}
           </code>
-          <Button variant="secondary" size="icon" onClick={() => void copy()} aria-label="Copy username">
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          </Button>
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const e = epoch + 1;
-              setEpoch(e);
-              void generate(e);
-            }}
+            variant="secondary"
+            size="icon"
+            onClick={() => void copy(current.username)}
+            aria-label="Copy username"
           >
-            Rotate
+            {copied === current.username ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
           </Button>
         </div>
       )}
+
+      {record && record.history.length > 1 && (
+        <div className="mt-3">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            Past usernames for {record.name}
+          </p>
+          <ul className="mt-2 space-y-1">
+            {record.history.slice(1).map((h) => (
+              <li
+                key={h.username}
+                className="mono-tag flex items-center justify-between gap-2 text-xs text-muted-foreground"
+              >
+                <span className="truncate line-through">{h.username}</span>
+                <span className="shrink-0">
+                  v{h.epoch + 1} · {new Date(h.createdAt).toLocaleDateString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <p className="mt-2 text-xs text-muted-foreground">
         Unique to you and this vendor — if it ever leaks, Canary traces it back.
       </p>

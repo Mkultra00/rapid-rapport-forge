@@ -35,16 +35,37 @@ export type Sighting = {
   hashPrev: string | null;
 };
 
+export type Watermark = {
+  username: string;
+  epoch: number;
+  createdAt: number;
+};
+
+export type VendorWatermarks = {
+  /** Display name as typed by the user. */
+  name: string;
+  /** Normalised key used for derivation. */
+  slug: string;
+  history: Watermark[];
+};
+
 export type State = {
   ready: boolean;
   personas: Persona[];
   sightings: Sighting[];
   passphrase: string;
+  watermarks: VendorWatermarks[];
 };
 
 const PASSPHRASE = "correct horse battery staple";
 
-let state: State = { ready: false, personas: [], sightings: [], passphrase: PASSPHRASE };
+let state: State = {
+  ready: false,
+  personas: [],
+  sightings: [],
+  passphrase: PASSPHRASE,
+  watermarks: [],
+};
 const serverState = state;
 const listeners = new Set<() => void>();
 
@@ -161,6 +182,39 @@ export function resetDemo() {
 export function hypothesesFor(s: Sighting): Hypothesis[] {
   const persona = state.personas.find((p) => p.vendor.domain === s.vendorDomain);
   return scoreHypotheses(persona?.vendor ?? VENDORS[0]!, s.evidence);
+}
+
+/** Normalise a typed vendor name into a stable derivation key. */
+export function vendorSlug(name: string) {
+  return name.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+export function watermarksFor(name: string): VendorWatermarks | undefined {
+  const slug = vendorSlug(name);
+  return state.watermarks.find((w) => w.slug === slug);
+}
+
+/**
+ * Generate the next watermark username for a vendor name. Existing vendors get a
+ * new epoch appended to their history; new vendors start a fresh history.
+ */
+export async function generateWatermark(name: string): Promise<Watermark | null> {
+  const K = key;
+  const slug = vendorSlug(name);
+  if (!K || !slug) return null;
+  const existing = state.watermarks.find((w) => w.slug === slug);
+  const epoch = existing ? (existing.history[0]?.epoch ?? -1) + 1 : 0;
+  const username = await deriveUsername(K, slug, epoch);
+  const entry: Watermark = { username, epoch, createdAt: Date.now() };
+  const next: VendorWatermarks = existing
+    ? { ...existing, name: name.trim(), history: [entry, ...existing.history] }
+    : { name: name.trim(), slug, history: [entry] };
+  set({
+    watermarks: existing
+      ? state.watermarks.map((w) => (w.slug === slug ? next : w))
+      : [next, ...state.watermarks],
+  });
+  return entry;
 }
 
 export function personaFor(domain: string): Persona | undefined {
