@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { MessageCircle, Search, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import canaryMascot from "@/assets/canary-mascot.png";
 import { ResultCard } from "@/components/ResultCard";
 import { WrenPanel } from "@/components/WrenPanel";
 import { DsarSheet } from "@/components/DsarSheet";
