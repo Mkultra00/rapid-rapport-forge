@@ -1,24 +1,165 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { MessageCircle, Search } from "lucide-react";
+import { AppShell } from "@/components/AppShell";
+import { ResultCard } from "@/components/ResultCard";
+import { WrenPanel } from "@/components/WrenPanel";
+import { DsarSheet } from "@/components/DsarSheet";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { identify, scoreHypotheses, type Match } from "@/lib/attribute";
+import { VENDORS } from "@/lib/seed";
+import { draftDeletionRequest } from "@/lib/dsar";
+import { epochMap, freezeAndRotate, getKey, personaFor, useCanary } from "@/lib/store";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Canary — find out who leaked your details" },
+      {
+        name: "description",
+        content:
+          "Paste an address, username or number that showed up somewhere it shouldn't have. Canary names the company you gave it to, and how sure it is.",
+      },
+      { property: "og:title", content: "Canary — find out who leaked your details" },
+      {
+        property: "og:description",
+        content: "Keyed identity markers that attribute a leak to a single company, offline.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: CheckPage,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function CheckPage() {
+  const state = useCanary();
+  const [q, setQ] = useState("");
+  const [match, setMatch] = useState<Match | null>(null);
+  const [searched, setSearched] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [wren, setWren] = useState(false);
+  const [dsar, setDsar] = useState<string | null>(null);
+
+  // Prefill from the newest unacknowledged sighting when arriving from Alerts.
+  useEffect(() => {
+    const pending = sessionStorage.getItem("canary:check");
+    if (pending) {
+      sessionStorage.removeItem("canary:check");
+      setQ(pending);
+    }
+  }, []);
+
+  async function run(value: string) {
+    const K = getKey();
+    if (!K) return;
+    setBusy(true);
+    const m = await identify(K, value, VENDORS, epochMap());
+    setMatch(m);
+    setSearched(true);
+    setBusy(false);
+  }
+
+  const sighting = match
+    ? state.sightings.find((s) => s.vendorDomain === match.vendor.domain)
+    : undefined;
+  const hypotheses = match ? scoreHypotheses(match.vendor, sighting?.evidence ?? {}) : [];
+  const persona = match ? personaFor(match.vendor.domain) : undefined;
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <AppShell title="Check">
+      <h1 className="text-[26px] font-semibold leading-tight">
+        Where did this
+        <br />
+        come from?
+      </h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Paste the address, username or number that turned up somewhere it shouldn&apos;t have.
+      </p>
+
+      <form
+        className="mt-4 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void run(q);
+        }}
+      >
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="k7abc2def@fy.cx"
+          className="mono-tag h-14 flex-1 text-base"
+          autoComplete="off"
+          spellCheck={false}
+        />
+        <Button type="submit" size="icon" className="h-14 w-14" aria-label="Check">
+          <Search className="h-5 w-5" />
+        </Button>
+      </form>
+
+      {!state.ready && <Skeleton className="mt-6 h-40 w-full rounded-2xl" />}
+
+      {state.ready && !searched && (
+        <div className="mt-6 space-y-2">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Try one of yours</p>
+          {state.personas.slice(0, 3).map((p) => (
+            <button
+              key={p.vendor.domain}
+              onClick={() => {
+                setQ(p.email);
+                void run(p.email);
+              }}
+              className="hairline mono-tag block w-full truncate rounded-xl bg-card px-4 py-3 text-left text-xs text-muted-foreground"
+            >
+              {p.email}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {busy && <Skeleton className="mt-6 h-40 w-full rounded-2xl" />}
+
+      {!busy && searched && !match && (
+        <div className="hairline mt-6 rounded-2xl bg-card p-5">
+          <p className="font-medium">Not one of yours.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            This doesn&apos;t match any marker derived from your key, so it was never issued by
+            Canary.
+          </p>
+        </div>
+      )}
+
+      {!busy && match && (
+        <div className="mt-6">
+          <ResultCard
+            vendorName={match.vendor.name}
+            observed={q}
+            channel={match.channel}
+            epoch={match.epoch}
+            hypotheses={hypotheses}
+            sighting={sighting}
+            frozen={persona?.frozen}
+            onFreeze={() => void freezeAndRotate(match.vendor.domain)}
+            onDsar={() => {
+              const p = personaFor(match.vendor.domain);
+              if (p) setDsar(draftDeletionRequest(p, sighting));
+            }}
+          />
+        </div>
+      )}
+
+      <Button
+        onClick={() => setWren(true)}
+        className="fixed bottom-24 right-[max(1.25rem,calc(50%-215px+1.25rem))] z-30 h-14 w-14 rounded-full shadow-lg"
+        aria-label="Ask WREN"
+      >
+        <MessageCircle className="h-6 w-6" />
+      </Button>
+
+      <WrenPanel open={wren} onOpenChange={setWren} />
+      <DsarSheet text={dsar} onOpenChange={() => setDsar(null)} />
+    </AppShell>
   );
 }
